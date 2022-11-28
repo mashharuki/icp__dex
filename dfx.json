@@ -4,6 +4,18 @@
       "main": "src/icp__dex_backend/main.mo",
       "type": "motoko"
     },
+    "faucet": {
+      "main": "src/faucet/main.mo",
+      "type": "motoko"
+    },
+    "GoldDIP20": {
+      "type": "motoko",
+      "main": "src/DIP20/motoko/src/token.mo"
+    },
+    "SilverDIP20": {
+      "type": "motoko",
+      "main": "src/DIP20/motoko/src/token.mo"
+    },
     "icp__dex_frontend": {
       "dependencies": [
         "icp__dex_backend"
@@ -24,7 +36,7 @@
       "packtool": ""
     }
   },
-  "dfx": "0.11.2",
+  "dfx": "0.12.1",
   "networks": {
     "local": {
       "bind": "127.0.0.1:8000",
