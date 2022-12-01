@@ -32,6 +32,10 @@ export FAUCET_PRINCIPAL=$(dfx canister id faucet)
 dfx canister call GoldDIP20 mint '(principal '\"$FAUCET_PRINCIPAL\"', 100_000)'
 dfx canister call SilverDIP20 mint '(principal '\"$FAUCET_PRINCIPAL\"', 100_000)'
 
+# ===== SETUP icp_basic_dex_backend
+dfx deploy icp__dex_backend
+export DEX_PRINCIPAL=$(dfx canister id icp__dex_backend)
+
 # ===== TEST faucet =====
 echo -e '\n\n#------ faucet ------------'
 dfx identity use user1
@@ -50,8 +54,46 @@ echo -n "getTOken    >  " \
 echo -n "balanceOf   >  " \
   && dfx canister call SilverDIP20 balanceOf '(principal '\"$USER2_PRINCIPAL\"')'
 
+# ===== TEST deposit =====
+echo -e '\n\n#------ deposit ------------'
+dfx identity use user1
+# approveをコールして、DEXがユーザーの代わりにdepositすることを許可する
+dfx canister call GoldDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)'
+echo -n "deposit     >  " \
+  && dfx canister call icp__dex_backend deposit '(principal '\"$GoldDIP20_PRINCIPAL\"')'
+# user1がDEXに預けたトークンのデータを確認
+echo -n "getBalance  >  " \
+  && dfx canister call icp__dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$GoldDIP20_PRINCIPAL\"')'
+
+# depositをコールするuser2に切り替え
+echo -e
+dfx identity use user2
+dfx canister call SilverDIP20 approve '(principal '\"$DEX_PRINCIPAL\"', 1_000)'
+echo -n "deposit     >  " \
+  && dfx canister call icp__dex_backend deposit '(principal '\"$SilverDIP20_PRINCIPAL\"')'
+echo -n "getBalance  >  " \
+  && dfx canister call icp__dex_backend getBalance '(principal '\"$USER2_PRINCIPAL\"', principal '\"$SilverDIP20_PRINCIPAL\"')'
+
+# ===== TEST withdraw =====
+echo -e '\n\n#------ withdraw ------'
+# withdrawをコールするuser1に切り替え
+dfx identity use user1
+echo -n "withdraw    >  " \
+  && dfx canister call icp__dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 500)'
+
+# user1の残高チェック
+echo -n "balanceOf   >  " \
+  && dfx canister call GoldDIP20 balanceOf '(principal '\"$USER1_PRINCIPAL\"')'
+
+# DEXの残高チェック
+echo -n "DEX balanceOf>  " \
+  && dfx canister call GoldDIP20 balanceOf '(principal '\"$DEX_PRINCIPAL\"')'
+
+echo -e '#----- withdraw (check { Err = variant { BalanceLow } } -----'
+dfx canister call icp__dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 1000)'
 
 # ===== 削除 =====
+echo -e '\n\n#------ clean user ------'
 dfx identity use default
 dfx identity remove user1
 dfx identity remove user2
