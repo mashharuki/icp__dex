@@ -60,4 +60,32 @@ module {
         token : Principal;
         amount : Nat;
     };
-}
+
+    // ====== ORDER =====
+    public type OrderId = Nat32;
+
+    public type Order = {
+        id: OrderId;
+        owner: Principal;
+        from: Token;
+        fromAmount: Nat;
+        to: Token;
+        toAmount: Nat;
+    };
+
+    public type PlaceOrderReceipt = {
+        #Ok : ?Order;
+        #Err: {
+            #InvalidOrder;
+            #OrderBookFull;
+        };
+    };
+
+    public type CancelOrderReceipt = {
+        #Ok : OrderId;
+        #Err : {
+            #NotAllowed;
+            #NotExistingOrder;
+        };
+    };
+};

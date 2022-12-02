@@ -89,6 +89,58 @@ echo -n "balanceOf   >  " \
 echo -n "DEX balanceOf>  " \
   && dfx canister call GoldDIP20 balanceOf '(principal '\"$DEX_PRINCIPAL\"')'
 
+# ===== TEST trading =====
+echo -e '\n\n#------ trading ------------'
+# オーダーを出すユーザーに切り替え
+dfx identity use user1
+echo -n "placeOrder  >  " \
+  && dfx canister call icp__dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)'
+echo -n "getOrders   >  " \
+  && dfx canister call icp__dex_backend getOrders
+
+echo -e '#----- trading (check { Err = variant { OrderBookFull } } -----'
+dfx canister call icp__dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 100, principal '\"$SilverDIP20_PRINCIPAL\"', 100)'
+
+# オーダーを購入するユーザーに切り替え
+echo -e
+dfx identity use user2
+dfx canister call icp__dex_backend placeOrder '(principal '\"$SilverDIP20_PRINCIPAL\"', 100, principal '\"$GoldDIP20_PRINCIPAL\"', 100)'
+# 取引が成立してオーダーが削除されていることを確認
+echo -n "getOrders   >  " \
+  && dfx canister call icp__dex_backend getOrders
+
+# トレード後のユーザー残高を確認
+echo -n "getBalance(user2, G)  >  " \
+  && dfx canister call icp__dex_backend getBalance '(principal '\"$USER2_PRINCIPAL\"', principal '\"$GoldDIP20_PRINCIPAL\"')'
+echo -n "getBalance(user2, S)  >  " \
+  && dfx canister call icp__dex_backend getBalance '(principal '\"$USER2_PRINCIPAL\"', principal '\"$SilverDIP20_PRINCIPAL\"')'
+
+echo -e
+dfx identity use user1
+echo -n "getBalance(user1, G)  >  " \
+  && dfx canister call icp__dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$GoldDIP20_PRINCIPAL\"')'
+echo -n "getBalance(user1, S)  >  " \
+  && dfx canister call icp__dex_backend getBalance '(principal '\"$USER1_PRINCIPAL\"', principal '\"$SilverDIP20_PRINCIPAL\"')'
+
+# ===== TEST withdraw =====
+echo -e '\n\n#------ withdraw & delete order ------'
+dfx canister call icp__dex_backend placeOrder '(principal '\"$GoldDIP20_PRINCIPAL\"', 500, principal '\"$SilverDIP20_PRINCIPAL\"', 500)'
+echo -n "getOrders   >  " \
+  && dfx canister call icp__dex_backend getOrders
+dfx identity use user1
+echo -n "withdraw    >  " \
+  && dfx canister call icp__dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 500)'
+echo -n "getOrders   >  " \
+  && dfx canister call icp__dex_backend getOrders
+
+# user1の残高チェック
+echo -n "balanceOf   >  " \
+  && dfx canister call GoldDIP20 balanceOf '(principal '\"$USER1_PRINCIPAL\"')'
+
+# DEXの残高チェック
+echo -n "DEX balanceOf>  " \
+  && dfx canister call GoldDIP20 balanceOf '(principal '\"$DEX_PRINCIPAL\"')'
+
 echo -e '#----- withdraw (check { Err = variant { BalanceLow } } -----'
 dfx canister call icp__dex_backend withdraw '(principal '\"$GoldDIP20_PRINCIPAL\"', 1000)'
 

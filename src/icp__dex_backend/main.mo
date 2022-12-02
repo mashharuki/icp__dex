@@ -4,6 +4,7 @@ import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 
 import BalanceBook "balance_book";
+import Exchange "exchange";
 import T "types";
 
 // === Dex class
@@ -11,6 +12,10 @@ actor class Dex() = this {
 
   // ===  import balanceBook
   private var balance_book = BalanceBook.BalanceBook();
+  private var last_id : Nat32 = 0;
+  // オーダーを管理するモジュール
+  private var exchange = Exchange.Exchange(balance_book);
+
 
   // ===== DEPOSIT =====
   public shared (msg) func deposit(token : T.Token) : async T.DepositReceipt {
@@ -63,7 +68,84 @@ actor class Dex() = this {
       case _ {};
     };
 
+    for (order in exchange.getOrders().vals()) {
+      if (msg.caller == order.owner and token == order.from) {
+        //ユーザーの残高とオーダーのfromAmaountを比較する
+        if (balance_book.hasEnoughBalance(msg.caller, token, order.fromAmount) == false) {
+          // call cancelOrder function
+          switch (exchange.cancelOrder(order.id)) {
+            case null return (#Err(#DeleteOrderFailure));
+            case (?cancel_order) return (#Ok(amount));
+          };
+        };
+      };
+    };
+
     return #Ok(amount);
+  };
+
+  // ===== create ORDER =====
+  public shared (msg) func placeOrder(
+    from: T.Token,
+    fromAmount: Nat,
+    to: T.Token,
+    toAmount: Nat,
+  ): async T.PlaceOrderReceipt{
+    // check
+    for (order in exchange.getOrders().vals()) {
+      if (msg.caller == order.owner and from == order.from) {
+        return (#Err(#OrderBookFull));
+      };
+    };
+
+    // check balance
+    if (balance_book.hasEnoughBalance(msg.caller, from, fromAmount) == false) {
+      return (#Err(#InvalidOrder));
+    };
+
+    // get orderID
+    let id : Nat32 = nextId();
+
+    let owner = msg.caller;
+
+    // order
+    let order : T.Order = {
+      id;
+      owner;
+      from;
+      fromAmount;
+      to;
+      toAmount;
+    };
+
+    // call addOrder
+    exchange.addOrder(order);
+    return (#Ok(exchange.getOrder(id)));
+  };
+
+  // === cancelOrder
+  public shared (msg) func cancelOrder(order_id : T.OrderId) : async T.CancelOrderReceipt {
+    // check exist order
+    switch (exchange.getOrder(order_id)) {
+      case null return (#Err(#NotExistingOrder));
+      case (?order) {
+        if (msg.caller != order.owner) {
+          return (#Err(#NotAllowed));
+        };
+        // call cancel order
+        switch (exchange.cancelOrder(order_id)) {
+          case null return (#Err(#NotExistingOrder));
+          case (?cancel_order) {
+            return (#Ok(cancel_order.id));
+          };
+        };
+      };
+    };
+  };
+
+  // === getOrders function
+  public query func getOrders() : async ([T.Order]) {
+    return (exchange.getOrders());
   };
 
   // ==== fetch_dif_fee
@@ -90,5 +172,11 @@ actor class Dex() = this {
         };
       };
     };
+  };
+
+  // === get Order ID
+  private func nextId() : Nat32 {
+    last_id += 1;
+    return (last_id);
   };
 };
