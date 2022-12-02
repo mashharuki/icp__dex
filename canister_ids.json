@@ -1,0 +1,17 @@
+{
+  "GoldDIP20": {
+    "ic": "4djj2-viaaa-aaaag-aa3wq-cai"
+  },
+  "SilverDIP20": {
+    "ic": "4kkcg-daaaa-aaaag-aa3xa-cai"
+  },
+  "faucet": {
+    "ic": "4nles-oyaaa-aaaag-aa3xq-cai"
+  },
+  "icp__dex_backend": {
+    "ic": "6qwk2-5qaaa-aaaag-aa3ya-cai"
+  },
+  "icp__dex_frontend": {
+    "ic": "6xxmo-qiaaa-aaaag-aa3yq-cai"
+  }
+}

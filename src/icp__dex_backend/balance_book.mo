@@ -11,6 +11,21 @@ module {
         // ユーザーとトークンの種類・量をマッピングする変数
         var balance_book = HashMap.HashMap<Principal, HashMap.HashMap<T.Token, Nat>>(10, Principal.equal, Principal.hash);
 
+        // === put 
+        public func put(user : Principal, userBalances : HashMap.HashMap<T.Token, Nat>) {
+            balance_book.put(user, userBalances);
+        };
+
+        // === entries 
+        public func entries() : Iter.Iter<(Principal, HashMap.HashMap<T.Token, Nat>)> {
+            balance_book.entries();
+        };
+
+        // === sizes
+        public func size() : Nat {
+            balance_book.size();
+        };
+
         // === get balance
         public func get(user : Principal) : ?HashMap.HashMap<T.Token, Nat> {
             return balance_book.get(user);

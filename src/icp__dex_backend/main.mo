@@ -15,6 +15,10 @@ actor class Dex() = this {
   private var last_id : Nat32 = 0;
   // オーダーを管理するモジュール
   private var exchange = Exchange.Exchange(balance_book);
+  
+  // stable 変数 
+  private stable var ordersEntries : [T.Order] = [];
+  private stable var balanceBookEntries : [var (Principal, [(T.Token, Nat)])] = [var];
 
 
   // ===== DEPOSIT =====
@@ -84,7 +88,7 @@ actor class Dex() = this {
     return #Ok(amount);
   };
 
-  // ===== create ORDER =====
+  // ===== create Order =====
   public shared (msg) func placeOrder(
     from: T.Token,
     fromAmount: Nat,
@@ -178,5 +182,39 @@ actor class Dex() = this {
   private func nextId() : Nat32 {
     last_id += 1;
     return (last_id);
+  };
+
+  // ===== UPGRADE =====
+  system func preupgrade() {
+    // DEXに預けられたトークンデータを`Array`に保存
+    balanceBookEntries := Array.init(balance_book.size(), (Principal.fromText("aaaaa-aa"), []));
+
+    var i = 0;
+
+    for ((x, y) in balance_book.entries()) {
+      balanceBookEntries[i] := (x, Iter.toArray(y.entries()));
+      i += 1;
+    };
+    // book内で管理しているオーダーを保管
+    ordersEntries := exchange.getOrders();
+  };
+
+  // キャニスターのアップグレード後、`Array`から`HashMap`に再構築する。
+  system func postupgrade() {
+    // balance_bookを再構築
+    for ((key : Principal, value : [(T.Token, Nat)]) in balanceBookEntries.vals()) {
+      let tmp : HashMap.HashMap<T.Token, Nat> = HashMap.fromIter<T.Token, Nat>(Iter.fromArray<(T.Token, Nat)>(value), 10, Principal.equal, Principal.hash);
+      balance_book.put(key, tmp);
+    };
+
+    // orderを再構築
+    for (order in ordersEntries.vals()) {
+      // call addOrder function
+      exchange.addOrder(order);
+    };
+
+    // メモリをクリアする
+    balanceBookEntries := [var];
+    ordersEntries := [];
   };
 };

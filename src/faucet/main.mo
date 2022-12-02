@@ -11,6 +11,8 @@ shared (msg) actor class Faucet() = this {
     private type Token = Principal;
     private let FAUCET_AMOUNT : Nat = 1_000;
 
+    private stable var faucetBookEntries : [var (Principal, [Token])] = [var];
+
     // ユーザーとトークンをマッピング
     private var faucet_book = HashMap.HashMap<Principal, [Token]>(
         10,
@@ -85,5 +87,27 @@ shared (msg) actor class Faucet() = this {
                 };
             };
         };
+    };
+
+    // === preupgrade function
+    system func preupgrade() {
+        // init
+        faucetBookEntries := Array.init(faucet_book.size(), (Principal.fromText("aaaaa-aa"), []));
+        var i = 0;
+
+        for ((x, y) in faucet_book.entries()) {
+            faucetBookEntries[i] := (x, y);
+            i += 1;
+        };
+    };
+
+    // === postupgrade function
+    system func postupgrade() {
+        // 再構築
+        for ((key : Principal, value : [Token]) in faucetBookEntries.vals()) {
+            faucet_book.put(key, value);
+        };
+        // memory clear
+        faucetBookEntries := [var];
     };
 }

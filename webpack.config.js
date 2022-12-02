@@ -3,8 +3,16 @@ const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 
+let localEnv = true;
+let network = "local";
+
+/**
+ * initCanisterEnv function
+ * @returns 
+ */
 function initCanisterEnv() {
   let localCanisters, prodCanisters;
+
   try {
     localCanisters = require(path.resolve(
       ".dfx",
@@ -14,25 +22,26 @@ function initCanisterEnv() {
   } catch (error) {
     console.log("No local canister_ids.json found. Continuing production");
   }
+
   try {
     prodCanisters = require(path.resolve("canister_ids.json"));
+    localEnv = false;
   } catch (error) {
     console.log("No production canister_ids.json found. Continuing with local");
   }
 
-  const network =
-    process.env.DFX_NETWORK ||
-    (process.env.NODE_ENV === "production" ? "ic" : "local");
+  const network = process.env.NODE_ENV === "production" && !localEnv ? "ic" : "local";
 
   const canisterConfig = network === "local" ? localCanisters : prodCanisters;
 
   return Object.entries(canisterConfig).reduce((prev, current) => {
     const [canisterName, canisterDetails] = current;
-    prev[canisterName.toUpperCase() + "_CANISTER_ID"] =
-      canisterDetails[network];
+
+    prev[canisterName.toUpperCase() + "_CANISTER_ID"] = canisterDetails[network];
     return prev;
   }, {});
 }
+// call initCanisterEnv function
 const canisterEnvVariables = initCanisterEnv();
 
 const isDevelopment = process.env.NODE_ENV !== "production";
@@ -68,18 +77,22 @@ module.exports = {
     filename: "index.js",
     path: path.join(__dirname, "dist", frontendDirectory),
   },
-
-  // Depending in the language or framework you are using for
-  // front-end development, add module loaders to the default
-  // webpack configuration. For example, if you are using React
-  // modules and CSS as described in the "Adding a stylesheet"
-  // tutorial, uncomment the following lines:
-  // module: {
-  //  rules: [
-  //    { test: /\.(ts|tsx|jsx)$/, loader: "ts-loader" },
-  //    { test: /\.css$/, use: ['style-loader','css-loader'] }
-  //  ]
-  // },
+  module: {
+    rules: [
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: ["@babel/preset-react"],
+          },
+        },
+      },
+      //    { test: /\.(ts|tsx|jsx)$/, loader: "ts-loader" },
+      { test: /\.css$/, use: ["style-loader", "css-loader"] },
+    ],
+  },
   plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, frontend_entry),

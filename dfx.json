@@ -16,6 +16,11 @@
       "type": "motoko",
       "main": "src/DIP20/motoko/src/token.mo"
     },
+    "internet_identity_div": {
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did"
+    },
     "icp__dex_frontend": {
       "dependencies": [
         "icp__dex_backend"
