@@ -15,6 +15,8 @@ export const ListOrder = (props) => {
         agent, 
         userPrincipal, 
         orderList, 
+        isLoading,
+        setIsLoading,
         updateOrderList, 
         updateUserTokens 
     } = props;
@@ -39,6 +41,7 @@ export const ListOrder = (props) => {
      */
     const handleBuyOrder = async (order) => {
         try {
+            setIsLoading(true);
             // create DEX Actor
             const DEXActor = createDEXActor();
             // call placeOrder function
@@ -58,10 +61,11 @@ export const ListOrder = (props) => {
             updateOrderList();
             // update token info
             updateUserTokens(userPrincipal);
-
+            setIsLoading(false);
             console.log("Trade Successful!");
         } catch (error) {
             console.log(`handleBuyOrder: ${error} `);
+            setIsLoading(false);
         }
     };
 
@@ -72,6 +76,7 @@ export const ListOrder = (props) => {
      */
     const handleCancelOrder = async (id) => {
         try {
+            setIsLoading(true);
             // create DEX Actor
             const DEXActor = createDEXActor();
             //  call cancelOrder function
@@ -84,9 +89,11 @@ export const ListOrder = (props) => {
             // update orderlist
             updateOrderList();
 
+            setIsLoading(false);
             console.log(`Canceled order ID: ${resultCancel.Ok}`);
         } catch (error) {
             console.log(`handleCancelOrder: ${error}`);
+            setIsLoading(false);
         }
     };
 

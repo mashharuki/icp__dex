@@ -20,6 +20,7 @@ const App = () => {
     const [userPrincipal, setUserPrincipal] = useState();
     const [userTokens, setUserTokens] = useState([]);
     const [orderList, setOrderList] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     /**
      * updateUserToken function
@@ -136,18 +137,24 @@ const App = () => {
                 <main className="app">
                     <UserBoard
                         agent={agent}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
                         userPrincipal={userPrincipal}
                         userTokens={userTokens}
                         setUserTokens={setUserTokens}
                     />
                     <PlaceOrder
                         agent={agent}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
                         updateOrderList={updateOrderList}
                     />
                     <ListOrder
                         agent={agent}
                         userPrincipal={userPrincipal}
                         orderList={orderList}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
                         updateOrderList={updateOrderList}
                         updateUserTokens={updateUserTokens}
                     />

@@ -10,7 +10,7 @@ import {
     canisterId as faucetCanisterId,
     createActor as faucetCreateActor,
 } from "../../../declarations/faucet";
-
+import { LoadingIndicator } from "./LoadingIndicator"; 
 import { tokens } from "../utils/token";
 
 /**
@@ -21,6 +21,8 @@ import { tokens } from "../utils/token";
 export const UserBoard = (props) => {
     const { 
         agent, 
+        isLoading,
+        setIsLoading,
         userPrincipal, 
         userTokens, 
         setUserTokens 
@@ -64,6 +66,7 @@ export const UserBoard = (props) => {
     const handleDeposit = async (updateIndex) => {
 
         try {
+            setIsLoading(true);
             // create actor
             const DEXActor = DEXCreateActor(DEXCanisterId, options);
             const tokenActor = tokens[updateIndex].createActor(
@@ -95,9 +98,10 @@ export const UserBoard = (props) => {
             console.log(`resultDeposit: ${resultDeposit.Ok}`);
             // updateUserToken
             updateUserToken(updateIndex);
-
+            setIsLoading(false);
         } catch (error) {
             console.log(`handleDeposit: ${error} `);
+            setIsLoading(false);
         }
     };
 
@@ -107,7 +111,9 @@ export const UserBoard = (props) => {
      * @returns 
      */
     const handleWithdraw = async (updateIndex) => {
+
         try {
+            setIsLoading(true);
             const DEXActor = DEXCreateActor(DEXCanisterId, options);
             // withdraw
             const resultWithdraw = await DEXActor.withdraw(
@@ -123,14 +129,18 @@ export const UserBoard = (props) => {
 
             // updateUserToken
             updateUserToken(updateIndex);
+            setIsLoading(false);
         } catch (error) {
             console.log(`handleWithdraw: ${error} `);
+            setIsLoading(false);
         }
     };
 
     // Faucetからトークンを取得する
     const handleFaucet = async (updateIndex) => {
+
         try {
+            setIsLoading(true);
             // create actor
             const faucetActor = faucetCreateActor(faucetCanisterId, options);
             // call getToken function
@@ -146,60 +156,68 @@ export const UserBoard = (props) => {
 
             // updateUserToken
             updateUserToken(updateIndex);
+            setIsLoading(false);
         } catch (error) {
             console.log(`handleFaucet: ${error}`);
+            setIsLoading(false);
         }
     };
 
     return (
         <>
             <div className="user-board">
-                <h2>User</h2>
-                <li>principal ID: {userPrincipal.toString()}</li>
-                <table>
-                    <tbody>
-                        <tr>
-                            <th>Token</th>
-                            <th>Balance</th>
-                            <th>DEX Balance</th>
-                            <th>Fee</th>
-                            <th>Action</th>
-                        </tr>
-                        {/* トークンのデータを一覧表示する */}
-                        {userTokens.map((token, index) => {
-                            return (
-                                <tr key={`${index} : ${token.symbol} `}>
-                                    <td data-th="Token">{token.symbol}</td>
-                                    <td data-th="Balance">{token.balance}</td>
-                                    <td data-th="DEX Balance">{token.dexBalance}</td>
-                                    <td data-th="Fee">{token.fee}</td>
-                                    <td data-th="Action">
-                                        <div>
-                                            <button
-                                                className="btn-green"
-                                                onClick={() => handleDeposit(index)}
-                                            >
-                                                Deposit
-                                            </button>
-                                            <button
-                                                className="btn-red"
-                                                onClick={() => handleWithdraw(index)}
-                                            >
-                                                Withdraw
-                                            </button>
-                                            <button
-                                                className="btn-blue"
-                                                onClick={() => handleFaucet(index)}
-                                            >
-                                                Faucet
-                                            </button>
-                                        </div>
-                                    </td>
+                {isLoading ? (
+                    <LoadingIndicator/>
+                ) : ( 
+                    <>
+                        <h2>User</h2>
+                        <li>principal ID: {userPrincipal.toString()}</li>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Balance</th>
+                                    <th>DEX Balance</th>
+                                    <th>Fee</th>
+                                    <th>Action</th>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                {/* トークンのデータを一覧表示する */}
+                                {userTokens.map((token, index) => {
+                                    return (
+                                        <tr key={`${index} : ${token.symbol} `}>
+                                            <td data-th="Token">{token.symbol}</td>
+                                            <td data-th="Balance">{token.balance}</td>
+                                            <td data-th="DEX Balance">{token.dexBalance}</td>
+                                            <td data-th="Fee">{token.fee}</td>
+                                            <td data-th="Action">
+                                                <div>
+                                                    <button
+                                                        className="btn-green"
+                                                        onClick={() => handleDeposit(index)}
+                                                    >
+                                                        Deposit
+                                                    </button>
+                                                    <button
+                                                        className="btn-red"
+                                                        onClick={() => handleWithdraw(index)}
+                                                    >
+                                                        Withdraw
+                                                    </button>
+                                                    <button
+                                                        className="btn-blue"
+                                                        onClick={() => handleFaucet(index)}
+                                                    >
+                                                        Faucet
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </>
+                )}
             </div>
         </>
     );

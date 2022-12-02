@@ -16,6 +16,8 @@ import { tokens } from "../utils/token";
 export const PlaceOrder = (props) => {
     const { 
         agent, 
+        isLoading,
+        setIsLoading,
         updateOrderList 
     } = props;
 
@@ -50,6 +52,7 @@ export const PlaceOrder = (props) => {
         console.log(`order: ${order}`);
 
         try {
+            setIsLoading(true);
             // ログインしているユーザーがDEXとやりとりを行うためにアクターを作成する
             const options = {
                 agent: agent,
@@ -79,8 +82,10 @@ export const PlaceOrder = (props) => {
 
             // 更新する。
             updateOrderList();
+            setIsLoading(false);
         } catch (error) {
             console.log(`handleSubmitOrder: ${error} `);
+            setIsLoading(false);
         }
     };
 
